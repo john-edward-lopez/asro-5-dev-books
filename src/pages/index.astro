@@ -1,43 +1,59 @@
 ---
-//import Welcome from "../components/Welcome.astro";
-import NavBar from "@/components/NavBar.astro";
-import Layout from "@/layouts/Layout.astro";
-import stickers from "@/data/stickers.json";
-import Sticker from "@/components/Sticker.astro";
-import "@/styles/global.css";
-import AstroHeart from "@/components/AstroHeart.astro";
-/*const data = await fetch("https://randomuser.me/api/").then((response) =>
-  response.json()
-);*/
-//console.log(data.results[0].name);
+import Layout from "@/layouts/LayoutBooks.astro";
+import { getCollection } from "astro:content";
 
-//console.log(stickers[0].name);
-console.log("Estoy en el servidor ");
+const books = await getCollection("books");
+
+//console.log(books);
+
 export const prerender = true;
 ---
 
-<script type="">
-  console.log("Hello !! Estoy en cliente?");
-  import confetti from "canvas-confetti";
+<Layout title="Dev Book libros para programadores" />
+<main>
+  <h1 class="text-center text-7xl font-extrabold mb-24">
+    Dev👨‍💻
+    <span class="block">Books</span>
+  </h1>
+</main>
+<!-- <Layout title="Dev Book libros para programadores">-->
+<section arial-label="Libros recomendados para programadores">
+  <div class="px-4 mx-auto max-w-screen-xl">
+    <div class="grid gap-6 md:grid-cols-2">
+      {
+        books.map((book) => {
+          const { slug, data } = book;
+          const { title, author, img, readtime, description, buy } = data;
 
-  const button1 = document.querySelector(".confetti-button");
+          return (
+            <article class="flex">
+              <a
+                href={`/libro/${slug}`}
+                class="mb-2 xl:mb-0 transition hover:scale-110"
+              >
+                <img
+                  src={`/${img}`}
+                  alt={title}
+                  transition:name={`img-${slug}`}
+                  class=" mr-5 w-48 rounded-lg"
+                />
+              </a>
 
-  button1.addEventListener("click", () => confetti());
-</script>
+              <div class="flex flex-col justify-center">
+                <h2
+                  transition:name={`title-${slug}`}
+                  class="mb- text-2xl font-bold leading-tight text-white"
+                >
+                  {title}
+                </h2>
 
-<Layout
-  title="Pagina principal"
-  description="mi pagina que describe gran variedad de cosas"
->
-  <button class="confetti-button">Celebrate!</button>
-
-  <div class="bg-orange-950 stickers-collection">
-    {stickers.map((sticker) => <Sticker data={sticker} />)}
+                <p class="mb-4 text-gray-300 max-w-sm"> {description} </p>
+                <span class="text-xs"> Lectura en {readtime} </span>
+              </div>
+            </article>
+          );
+        })
+      }
+    </div>
   </div>
-
-  <img src={stickers[0].url} alt="benson" />
-
-  <AstroHeart />
-
-  <NavBar />
-</Layout>
+</section>
