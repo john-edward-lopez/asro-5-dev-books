@@ -1,0 +1,72 @@
+---
+import { getCollection, render } from "astro:content";
+import Layout from "@/layouts/LayoutBooks.astro";
+import { SHOW_BUY_BUTTON } from "astro:env/server";
+import BuyButton from "@/components/BayButton.astro";
+// const envVars = {
+//   databaseUrl: import.meta.env.SHOW_BUY_BUTTON ?? "No definida",
+// };
+import AmazonLogo from "@/components/AmazonLogo.astro";
+import BookScore from "@/components/BookScore.astro";
+export async function getStaticPaths() {
+  const books = await getCollection("books");
+  //   return [
+  //     {
+  //       params: { id: "aprendiendo-git" },
+  //       props: { title: " Aprendiendo Git y GitHub" },
+  //     },
+  //     {
+  //       params: { id: "learning-typescript" },
+  //       props: { title: " Learning TypeScript " },
+  //     },
+  //     {
+  //       params: { id: "programador-pragmatico " },
+  //       props: { title: " programador Pragmatico " },
+  //     },
+  //   ];
+  return books.map((book) => ({
+    params: { id: book.slug },
+    props: { book },
+  }));
+}
+
+const { book } = Astro.props;
+const { data, slug } = book;
+const { title, author, img, readtime, description, buy } = data;
+
+const { Content } = await render(book);
+
+export const prerender = true;
+---
+
+<Layout title={`${title} - Dev Books`}>
+  <div class="flex gap-12">
+    <aside class="flex flex-col items-center gap-4">
+      <a href="../booksdev/" class="hover:underline opacity-70"
+        >⬅ Volver Atras</a
+      >
+      <img
+        transition:name={`img-${slug}`}
+        src={`/public/${img}`}
+        class="rounded w-96 h-auto"
+        alt="{title}"
+      />
+
+      <BookScore server:defer id="{slug}">
+        <span slot="fallback" class="text-xs opacity-70">
+          Cargando puntuacion...</span
+        >
+      </BookScore>
+      <!-- enlace para comprar -->
+      {SHOW_BUY_BUTTON && <BuyButton server:defer buy="buy" />}
+    </aside>
+    <main class="max-w-3xl">
+      <h1 transition:name={`title-${slug}`} class="text-4xl font-bold mb-4">
+        {title}
+      </h1>
+      <div class="prose-neutral">
+        <Content />
+      </div>
+    </main>
+  </div>
+</Layout>

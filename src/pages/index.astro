@@ -1,11 +1,43 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+//import Welcome from "../components/Welcome.astro";
+import NavBar from "@/components/NavBar.astro";
+import Layout from "@/layouts/Layout.astro";
+import stickers from "@/data/stickers.json";
+import Sticker from "@/components/Sticker.astro";
+import "@/styles/global.css";
+import AstroHeart from "@/components/AstroHeart.astro";
+/*const data = await fetch("https://randomuser.me/api/").then((response) =>
+  response.json()
+);*/
+//console.log(data.results[0].name);
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+//console.log(stickers[0].name);
+console.log("Estoy en el servidor ");
+export const prerender = true;
 ---
 
-<Layout>
-	<Welcome />
+<script type="">
+  console.log("Hello !! Estoy en cliente?");
+  import confetti from "canvas-confetti";
+
+  const button1 = document.querySelector(".confetti-button");
+
+  button1.addEventListener("click", () => confetti());
+</script>
+
+<Layout
+  title="Pagina principal"
+  description="mi pagina que describe gran variedad de cosas"
+>
+  <button class="confetti-button">Celebrate!</button>
+
+  <div class="bg-orange-950 stickers-collection">
+    {stickers.map((sticker) => <Sticker data={sticker} />)}
+  </div>
+
+  <img src={stickers[0].url} alt="benson" />
+
+  <AstroHeart />
+
+  <NavBar />
 </Layout>

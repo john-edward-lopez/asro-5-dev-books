@@ -1,0 +1,27 @@
+[  
+    {
+     "name": "Benson",
+     "url": "https://manz.dev/assets/stickers/benson.png",
+     "category":"streamer"
+    },
+    {
+     "name": "Dexter",
+     "url": "https://manz.dev/assets/stickers/dexter.png",
+     "category":"streamer"
+    },
+    {
+     "name": "Johnny",
+     "url": "https://manz.dev/assets/stickers/johnny-bravo.png",
+     "category":"streamer"
+    },
+    {
+     "name": "Piccolo",
+     "url": "https://manz.dev/assets/stickers/piccolo.gif",
+     "category":"streamer"
+    },
+    {
+     "name": "Squirtle",
+     "url": "https://manz.dev/assets/stickers/squirtle.png",
+     "category":"streamer"
+    }
+]
