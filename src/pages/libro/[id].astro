@@ -42,9 +42,7 @@ export const prerender = true;
 <Layout title={`${title} - Dev Books`}>
   <div class="flex gap-12">
     <aside class="flex flex-col items-center gap-4">
-      <a href="../booksdev/" class="hover:underline opacity-70"
-        >⬅ Volver Atras</a
-      >
+      <a href="/" class="hover:underline opacity-70">⬅ Volver Atras</a>
       <img
         transition:name={`img-${slug}`}
         src={`/public/${img}`}
@@ -52,7 +50,7 @@ export const prerender = true;
         alt="{title}"
       />
 
-      <BookScore server:defer id="{slug}">
+      <BookScore server:defer id={slug}>
         <span slot="fallback" class="text-xs opacity-70">
           Cargando puntuacion...</span
         >
