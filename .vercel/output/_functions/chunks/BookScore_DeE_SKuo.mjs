@@ -13,7 +13,7 @@ const SCORE_API_ENDPOINT = "https://www.random.org/integers/?num=1&min=1&max=5&c
 const $$BookScore = createComponent(async ($$result, $$props, $$slots) => {
   const res = await fetch(SCORE_API_ENDPOINT);
   const scoreValue = await res.text();
-  return renderTemplate`${maybeRenderHead()}<span class="text-xs" id="score">${`\u2B50 Puntuacion: ${scoreValue.trim()}/5`} </span>`;
+  return renderTemplate`${maybeRenderHead()}<span class="text-xs" id="score"> ${`\u2B50 Puntuacion: ${scoreValue.trim()}/5`} </span>`;
 }, "C:/Users/john lopez/Desktop/aprendiendo-astro/src/components/BookScore.astro", undefined);
 
 const $$file = "C:/Users/john lopez/Desktop/aprendiendo-astro/src/components/BookScore.astro";
