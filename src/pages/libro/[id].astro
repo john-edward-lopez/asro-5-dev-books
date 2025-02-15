@@ -56,7 +56,7 @@ export const prerender = true;
         </span>
       </BookScore>
 
-      {SHOW_BUY_BUTTON && <BuyButton server:defer buy={buy} />}
+      <BuyButton server:defer buy={buy} />
     </aside>
     <main class="max-w-3xl">
       <h1 transition:name={`title-${slug}`} class="text-4xl font-bold mb-4">
