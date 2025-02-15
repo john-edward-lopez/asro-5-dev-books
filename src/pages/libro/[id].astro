@@ -45,15 +45,15 @@ export const prerender = true;
       <a href="/" class="hover:underline opacity-70">⬅ Volver Atras</a>
       <img
         transition:name={`img-${slug}`}
-        src={`/public/${img}`}
-        class="rounded w-96 h-auto"
-        alt="{title}"
+        src={`/${img}`}
+        alt={title}
+        class="rounded w-72 h-auto"
       />
 
       <BookScore server:defer id={slug}>
         <span slot="fallback" class="text-xs opacity-70">
-          Cargando puntuacion...</span
-        >
+          Cargando puntuacion...
+        </span>
       </BookScore>
       <!-- enlace para comprar -->
       {SHOW_BUY_BUTTON && <BuyButton server:defer buy={buy} />}

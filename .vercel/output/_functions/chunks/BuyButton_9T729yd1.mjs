@@ -15,8 +15,8 @@ const $$BayButton = createComponent(($$result, $$props, $$slots) => {
   const storeCountry = country === SPAIN ? "spain" : "usa";
   const countryName = country === SPAIN ? "espa\xF1a" : "EstadosUnidos";
   const { buy } = Astro2.props;
-  buy[storeCountry];
-  return renderTemplate`${maybeRenderHead()}<a${addAttribute(buy.spain, "href")} title="Comprar libro" target="_blank" rel="noopener noreferrer" class="text-balance inline-flex gap-2 items-center bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-black font-bold py-2 px-4 rounded-lg border border-yellow-500 transition duration-200 ease-in-out hover:scale-105 justify-center text-center">
+  const url = buy[storeCountry];
+  return renderTemplate`${maybeRenderHead()}<a${addAttribute(url, "href")} title="Comprar libro" target="_blank" rel="noopener noreferrer" class="text-balance inline-flex gap-2 items-center bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-black font-bold py-2 px-4 rounded-lg border border-yellow-500 transition duration-200 ease-in-out hover:scale-105 justify-center text-center">
 Comprar en Amazon ${countryName} ${renderComponent($$result, "AmazonLogo", $$AmazonLogo, {})} </a>`;
 }, "C:/Users/john lopez/Desktop/aprendiendo-astro/src/components/BayButton.astro", undefined);
 
