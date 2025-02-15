@@ -1,9 +1,9 @@
 import { renderers } from './renderers.mjs';
 import { c as createExports } from './chunks/entrypoint_C5AVfHYp.mjs';
-import { manifest } from './manifest_CmccDDi0.mjs';
+import { manifest } from './manifest_Dc6LRoiT.mjs';
 
 const serverIslandMap = new Map([
-	['BookScore', () => import('./chunks/BookScore_DojFGMlS.mjs')],
+	['BookScore', () => import('./chunks/BookScore_oNpBuRKr.mjs')],
 	['BuyButton', () => import('./chunks/BuyButton_Dw_nj3--.mjs')],
 ]);;
 
@@ -23,7 +23,7 @@ const _manifest = Object.assign(manifest, {
     middleware: () => import('./_noop-middleware.mjs')
 });
 const _args = {
-    "middlewareSecret": "6f6bf5aa-0645-4593-a2b9-9c545aa9c333",
+    "middlewareSecret": "9f2b2a2d-039c-439a-9cbf-1af9c78be671",
     "skewProtection": false
 };
 const _exports = createExports(_manifest, _args);

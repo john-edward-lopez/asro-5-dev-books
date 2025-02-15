@@ -6,7 +6,7 @@ import BuyButton from "@/components/BuyButton.astro";
 // const envVars = {
 //   databaseUrl: import.meta.env.SHOW_BUY_BUTTON ?? "No definida",
 // };
-import AmazonLogo from "@/components/AmazonLogo.astro";
+
 import BookScore from "@/components/BookScore.astro";
 export async function getStaticPaths() {
   const books = await getCollection("books");
@@ -55,7 +55,7 @@ export const prerender = true;
           Cargando puntuacion...
         </span>
       </BookScore>
-      <!-- enlace para comprar -->
+
       {SHOW_BUY_BUTTON && <BuyButton server:defer buy={buy} />}
     </aside>
     <main class="max-w-3xl">
