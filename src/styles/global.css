@@ -1,7 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+@import "tailwindcss";
 .stickers-collection {
   display: flex;
   flex-wrap: wrap;

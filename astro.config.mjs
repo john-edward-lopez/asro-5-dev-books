@@ -1,13 +1,15 @@
 // @ts-check
 import { defineConfig, envField } from "astro/config";
+import vercelServerless from "@astrojs/vercel/serverless";
+import tailwindcss from "@tailwindcss/vite";
 
-import tailwind from "@astrojs/tailwind";
-import vercelServerless from "@astrojs/vercel";
 // https://astro.build/config
 export default defineConfig({
   output: "server",
+  vite: {
+    plugins: [tailwindcss()],
+  },
 
-  integrations: [tailwind()],
   env: {
     schema: {
       SHOW_BUY_BUTTON: envField.boolean({
@@ -21,5 +23,10 @@ export default defineConfig({
       }),
     },
   },
-  adapter: vercelServerless(),
+  adapter: vercelServerless({
+    webAnalytics: {
+      enabled: true,
+    },
+    maxDuration: 8,
+  }),
 });
