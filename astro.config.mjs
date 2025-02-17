@@ -23,10 +23,5 @@ export default defineConfig({
       }),
     },
   },
-  adapter: vercelServerless({
-    webAnalytics: {
-      enabled: true,
-    },
-    maxDuration: 8,
-  }),
+  adapter: vercelServerless(),
 });
