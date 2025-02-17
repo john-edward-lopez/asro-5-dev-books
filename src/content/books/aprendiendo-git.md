@@ -5,7 +5,7 @@ img: aprendiendo-git.jpg
 readtime: 224
 description: Aprende a usar Github para gestionar tus proyectos decodigo.
 buy:
-  spain: htt://amzm.to/4e3MYLG
+  spain: https://www.amazon.es/Aprendiendo-Git-GitHub-pr%C3%A1cticas-estrategias/dp/B0D2LPMG6F
   usa: https://www.amazon.com/-/es/Aprendiendo-Git-GitHub-pr%C3%A1cticas-estrategias/dp/B0D2LPMG6F
 ---
 
