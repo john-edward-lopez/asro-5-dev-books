@@ -1,6 +1,6 @@
 // @ts-check
 import { defineConfig, envField } from "astro/config";
-import vercelServerless from "@astrojs/vercel/serverless";
+import vercelServerless from "@astrojs/vercel";
 import tailwindcss from "@tailwindcss/vite";
 
 // https://astro.build/config
@@ -23,10 +23,5 @@ export default defineConfig({
       }),
     },
   },
-  adapter: vercelServerless({
-    webAnalytics: {
-      enabled: false,
-    },
-    maxDuration: 8,
-  }),
+  adapter: vercelServerless(),
 });
