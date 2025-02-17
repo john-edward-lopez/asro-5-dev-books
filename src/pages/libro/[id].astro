@@ -1,13 +1,13 @@
 ---
 import { getCollection, render } from "astro:content";
-import Layout from "@/layouts/LayoutBooks.astro";
+import Layout from "../../layouts/LayoutBooks.astro";
 import { SHOW_BUY_BUTTON } from "astro:env/server";
-import BuyButton from "@/components/BuyButton.astro";
+import BuyButton from "../../components/BuyButton.astro";
 // const envVars = {
 //   databaseUrl: import.meta.env.SHOW_BUY_BUTTON ?? "No definida",
 // };
 
-import BookScore from "@/components/BookScore.astro";
+import BookScore from "../../components/BookScore.astro";
 export async function getStaticPaths() {
   const books = await getCollection("books");
 
