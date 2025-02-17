@@ -1,5 +1,5 @@
 import { i as isRemotePath, j as joinPaths } from './path_Cvt6sEOY.mjs';
-import { A as AstroError, E as ExpectedImage, L as LocalImageUsedWrongly, n as MissingImageDimension, o as UnsupportedImageFormat, I as IncompatibleDescriptorOptions, p as UnsupportedImageConversion, q as NoImageMetadata, F as FailedToFetchRemoteImageDimensions, s as ExpectedImageOptions, t as ExpectedNotESMImage, v as InvalidImageService, w as toStyleString, c as createComponent, a as createAstro, x as ImageMissingAlt, r as renderTemplate, m as maybeRenderHead, d as addAttribute, y as spreadAttributes } from './astro/server_Cu9eT8yJ.mjs';
+import { A as AstroError, E as ExpectedImage, L as LocalImageUsedWrongly, n as MissingImageDimension, o as UnsupportedImageFormat, I as IncompatibleDescriptorOptions, p as UnsupportedImageConversion, q as NoImageMetadata, F as FailedToFetchRemoteImageDimensions, s as ExpectedImageOptions, t as ExpectedNotESMImage, v as InvalidImageService, w as toStyleString, c as createComponent, a as createAstro, x as ImageMissingAlt, m as maybeRenderHead, d as addAttribute, y as spreadAttributes, b as renderTemplate } from './astro/server_fH9AuEq-.mjs';
 import { D as DEFAULT_OUTPUT_FORMAT, a as VALID_SUPPORTED_FORMATS, b as DEFAULT_HASH_PROPS } from './consts_BmVDRGlB.mjs';
 import * as mime from 'mrmime';
 import 'clsx';
@@ -87,7 +87,7 @@ const getSizesAttribute = ({
   layout
 }) => {
   if (!width || !layout) {
-    return undefined;
+    return void 0;
   }
   switch (layout) {
     // If screen is wider than the max size then image width is the max size,
@@ -102,7 +102,7 @@ const getSizesAttribute = ({
       return `100vw`;
     case "none":
     default:
-      return undefined;
+      return void 0;
   }
 };
 
@@ -186,7 +186,7 @@ const baseService = {
         message: ExpectedImage.message(
           JSON.stringify(options.src),
           typeof options.src,
-          JSON.stringify(options, (_, v) => v === undefined ? null : v)
+          JSON.stringify(options, (_, v) => v === void 0 ? null : v)
         )
       });
     }
@@ -351,16 +351,16 @@ const baseService = {
   parseURL(url) {
     const params = url.searchParams;
     if (!params.has("href")) {
-      return undefined;
+      return void 0;
     }
     const transform = {
       src: params.get("href"),
-      width: params.has("w") ? parseInt(params.get("w")) : undefined,
-      height: params.has("h") ? parseInt(params.get("h")) : undefined,
+      width: params.has("w") ? parseInt(params.get("w")) : void 0,
+      height: params.has("h") ? parseInt(params.get("h")) : void 0,
       format: params.get("f"),
       quality: params.get("q"),
       fit: params.get("fit"),
-      position: params.get("position") ?? undefined
+      position: params.get("position") ?? void 0
     };
     return transform;
   }
@@ -908,7 +908,7 @@ const unitsReg = new RegExp(
 function parseLength(len) {
   const m = unitsReg.exec(len);
   if (!m) {
-    return undefined;
+    return void 0;
   }
   return Math.round(Number(m[1]) * (units[m[2]] || 1));
 }
@@ -1149,7 +1149,7 @@ function lookup(input) {
       throw new TypeError("disabled file type: " + type);
     }
     const size = typeHandlers.get(type).calculate(input);
-    if (size !== undefined) {
+    if (size !== void 0) {
       size.type = size.type ?? type;
       return size;
     }
@@ -1223,7 +1223,7 @@ async function getConfiguredImageService() {
   if (!globalThis?.astroAsset?.imageService) {
     const { default: service } = await import(
       // @ts-expect-error
-      './sharp_BP8xjU-f.mjs'
+      './sharp_CJ6GGU2Q.mjs'
     ).catch((e) => {
       const error = new AstroError(InvalidImageService);
       error.cause = e;
@@ -1272,7 +1272,7 @@ async function getImage$1(options, imageConfig) {
     originalFormat = result.format;
     delete resolvedOptions.inferSize;
   }
-  const originalFilePath = isESMImportedImage(resolvedOptions.src) ? resolvedOptions.src.fsPath : undefined;
+  const originalFilePath = isESMImportedImage(resolvedOptions.src) ? resolvedOptions.src.fsPath : void 0;
   const clonedSrc = isESMImportedImage(resolvedOptions.src) ? (
     // @ts-expect-error - clone is a private, hidden prop
     resolvedOptions.src.clone ?? resolvedOptions.src
@@ -1353,12 +1353,12 @@ async function getImage$1(options, imageConfig) {
       values: srcSets,
       attribute: srcSets.map((srcSet) => `${srcSet.url} ${srcSet.descriptor}`).join(", ")
     },
-    attributes: service.getHTMLAttributes !== undefined ? await service.getHTMLAttributes(validatedOptions, imageConfig) : {}
+    attributes: service.getHTMLAttributes !== void 0 ? await service.getHTMLAttributes(validatedOptions, imageConfig) : {}
   };
 }
 
 function addCSSVarsToStyle(vars, styles) {
-  const cssVars = Object.entries(vars).filter(([_, value]) => value !== undefined && value !== false).map(([key, value]) => `--${key}: ${value};`).join(" ");
+  const cssVars = Object.entries(vars).filter(([_, value]) => value !== void 0 && value !== false).map(([key, value]) => `--${key}: ${value};`).join(" ");
   if (!styles) {
     return cssVars;
   }
@@ -1391,7 +1391,7 @@ const $$Image = createComponent(async ($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$Astro$1, $$props, $$slots);
   Astro2.self = $$Image;
   const props = Astro2.props;
-  if (props.alt === undefined || props.alt === null) {
+  if (props.alt === void 0 || props.alt === null) {
     throw new AstroError(ImageMissingAlt);
   }
   if (typeof props.width === "string") {
@@ -1419,7 +1419,7 @@ const $$Image = createComponent(async ($$result, $$props, $$slots) => {
     additionalAttributes
   }) : { ...additionalAttributes, ...image.attributes };
   return renderTemplate`${maybeRenderHead()}<img${addAttribute(image.src, "src")}${spreadAttributes(attributes)}${addAttribute(className, "class")}>`;
-}, "C:/Users/john lopez/Desktop/aprendiendo-astro/node_modules/astro/components/Image.astro", undefined);
+}, "C:/Users/john lopez/Desktop/aprendiendo-astro/node_modules/astro/components/Image.astro", void 0);
 
 const $$Astro = createAstro();
 const $$Picture = createComponent(async ($$result, $$props, $$slots) => {
@@ -1429,7 +1429,7 @@ const $$Picture = createComponent(async ($$result, $$props, $$slots) => {
   const defaultFallbackFormat = "png";
   const specialFormatsFallback = ["gif", "svg", "jpg", "jpeg"];
   const { formats = defaultFormats, pictureAttributes = {}, fallbackFormat, ...props } = Astro2.props;
-  if (props.alt === undefined || props.alt === null) {
+  if (props.alt === void 0 || props.alt === null) {
     throw new AstroError(ImageMissingAlt);
   }
   const scopedStyleClass = props.class?.match(/\bastro-\w{8}\b/)?.[0];
@@ -1492,7 +1492,7 @@ const $$Picture = createComponent(async ($$result, $$props, $$slots) => {
     const srcsetAttribute = props.densities || !props.densities && !props.widths && !useResponsive ? `${image.src}${image.srcSet.values.length > 0 ? ", " + image.srcSet.attribute : ""}` : image.srcSet.attribute;
     return renderTemplate`<source${addAttribute(srcsetAttribute, "srcset")}${addAttribute(mime.lookup(image.options.format ?? image.src) ?? `image/${image.options.format}`, "type")}${spreadAttributes(sourceAdditionalAttributes)}>`;
   })}  <img${addAttribute(fallbackImage.src, "src")}${spreadAttributes(attributes)}${addAttribute(className, "class")}> </picture>`;
-}, "C:/Users/john lopez/Desktop/aprendiendo-astro/node_modules/astro/components/Picture.astro", undefined);
+}, "C:/Users/john lopez/Desktop/aprendiendo-astro/node_modules/astro/components/Picture.astro", void 0);
 
 const imageConfig = {"endpoint":{"route":"/_image"},"service":{"entrypoint":"astro/assets/services/sharp","config":{}},"domains":[],"remotePatterns":[],"experimentalResponsiveImages":false};
 					const getImage = async (options) => await getImage$1(options, imageConfig);

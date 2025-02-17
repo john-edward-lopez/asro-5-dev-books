@@ -1,4 +1,4 @@
-import { c as createComponent, r as renderTemplate, m as maybeRenderHead } from './astro/server_Cu9eT8yJ.mjs';
+import { c as createComponent, m as maybeRenderHead, b as renderTemplate } from './astro/server_fH9AuEq-.mjs';
 import 'kleur/colors';
 import 'clsx';
 import { s as setOnSetGetEnv } from './runtime_BaX0UJyD.mjs';
@@ -16,7 +16,7 @@ const $$BookScore = createComponent(async ($$result, $$props, $$slots) => {
   return renderTemplate`${maybeRenderHead()}<span class="text-xs" id="score">
 ⭐ Puntuacion: ${scoreValue.trim()}/5
 </span>`;
-}, "C:/Users/john lopez/Desktop/aprendiendo-astro/src/components/BookScore.astro", undefined);
+}, "C:/Users/john lopez/Desktop/aprendiendo-astro/src/components/BookScore.astro", void 0);
 
 const $$file = "C:/Users/john lopez/Desktop/aprendiendo-astro/src/components/BookScore.astro";
 const $$url = undefined;
