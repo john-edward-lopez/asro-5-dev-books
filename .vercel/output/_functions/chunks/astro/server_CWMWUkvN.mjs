@@ -4,7 +4,7 @@ import { escape } from 'html-escaper';
 import { decodeBase64, encodeHexUpperCase, encodeBase64, decodeHex } from '@oslojs/encoding';
 import cssesc from 'cssesc';
 
-const ASTRO_VERSION = "5.1.7";
+const ASTRO_VERSION = "5.0.0";
 const REROUTE_DIRECTIVE_HEADER = "X-Astro-Reroute";
 const REWRITE_DIRECTIVE_HEADER_KEY = "X-Astro-Rewrite";
 const REWRITE_DIRECTIVE_HEADER_VALUE = "yes";
@@ -13,6 +13,7 @@ const ROUTE_TYPE_HEADER = "X-Astro-Route-Type";
 const DEFAULT_404_COMPONENT = "astro-default-404.astro";
 const REROUTABLE_STATUS_CODES = [404, 500];
 const clientAddressSymbol = Symbol.for("astro.clientAddress");
+const clientLocalsSymbol = Symbol.for("astro.locals");
 const originPathnameSymbol = Symbol.for("astro.originPathname");
 const responseSentSymbol = Symbol.for("astro.responseSent");
 
@@ -70,25 +71,25 @@ const InvalidGetStaticPathsEntry = {
   name: "InvalidGetStaticPathsEntry",
   title: "Invalid entry inside getStaticPath's return value",
   message: (entryType) => `Invalid entry returned by getStaticPaths. Expected an object, got \`${entryType}\``,
-  hint: "If you're using a `.map` call, you might be looking for `.flatMap()` instead. See https://docs.astro.build/en/reference/routing-reference/#getstaticpaths for more information on getStaticPaths."
+  hint: "If you're using a `.map` call, you might be looking for `.flatMap()` instead. See https://docs.astro.build/en/reference/api-reference/#getstaticpaths for more information on getStaticPaths."
 };
 const InvalidGetStaticPathsReturn = {
   name: "InvalidGetStaticPathsReturn",
   title: "Invalid value returned by getStaticPaths.",
   message: (returnType) => `Invalid type returned by \`getStaticPaths\`. Expected an \`array\`, got \`${returnType}\``,
-  hint: "See https://docs.astro.build/en/reference/routing-reference/#getstaticpaths for more information on getStaticPaths."
+  hint: "See https://docs.astro.build/en/reference/api-reference/#getstaticpaths for more information on getStaticPaths."
 };
 const GetStaticPathsExpectedParams = {
   name: "GetStaticPathsExpectedParams",
   title: "Missing params property on `getStaticPaths` route.",
   message: "Missing or empty required `params` property on `getStaticPaths` route.",
-  hint: "See https://docs.astro.build/en/reference/routing-reference/#getstaticpaths for more information on getStaticPaths."
+  hint: "See https://docs.astro.build/en/reference/api-reference/#getstaticpaths for more information on getStaticPaths."
 };
 const GetStaticPathsInvalidRouteParam = {
   name: "GetStaticPathsInvalidRouteParam",
   title: "Invalid value for `getStaticPaths` route parameter.",
   message: (key, value, valueType) => `Invalid getStaticPaths route parameter for \`${key}\`. Expected undefined, a string or a number, received \`${valueType}\` (\`${value}\`)`,
-  hint: "See https://docs.astro.build/en/reference/routing-reference/#getstaticpaths for more information on getStaticPaths."
+  hint: "See https://docs.astro.build/en/reference/api-reference/#getstaticpaths for more information on getStaticPaths."
 };
 const GetStaticPathsRequired = {
   name: "GetStaticPathsRequired",
@@ -231,18 +232,6 @@ const AstroResponseHeadersReassigned = {
   title: "`Astro.response.headers` must not be reassigned.",
   message: "Individual headers can be added to and removed from `Astro.response.headers`, but it must not be replaced with another instance of `Headers` altogether.",
   hint: "Consider using `Astro.response.headers.add()`, and `Astro.response.headers.delete()`."
-};
-const SessionStorageInitError = {
-  name: "SessionStorageInitError",
-  title: "Session storage could not be initialized.",
-  message: (error, driver) => `Error when initializing session storage${driver ? ` with driver \`${driver}\`` : ""}. \`${error ?? ""}\``,
-  hint: "For more information, see https://docs.astro.build/en/reference/experimental-flags/sessions/"
-};
-const SessionStorageSaveError = {
-  name: "SessionStorageSaveError",
-  title: "Session data could not be saved.",
-  message: (error, driver) => `Error when saving session data${driver ? ` with driver \`${driver}\`` : ""}. \`${error ?? ""}\``,
-  hint: "For more information, see https://docs.astro.build/en/reference/experimental-flags/sessions/"
 };
 const LocalImageUsedWrongly = {
   name: "LocalImageUsedWrongly",
@@ -715,8 +704,6 @@ function extractDirectives(inputProps, clientDirectives) {
           extracted.hydration.componentExport.value = value;
           break;
         }
-        // This is a special prop added to prove that the client hydration method
-        // was added statically.
         case "client:component-hydration": {
           break;
         }
@@ -919,7 +906,7 @@ function getPrescripts(result, type, directive) {
 }
 
 const voidElementNames = /^(area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/i;
-const htmlBooleanAttributes = /^(?:allowfullscreen|async|autofocus|autoplay|checked|controls|default|defer|disabled|disablepictureinpicture|disableremoteplayback|formnovalidate|hidden|inert|loop|nomodule|novalidate|open|playsinline|readonly|required|reversed|scoped|seamless|selected|itemscope)$/i;
+const htmlBooleanAttributes = /^(?:allowfullscreen|async|autofocus|autoplay|checked|controls|default|defer|disabled|disablepictureinpicture|disableremoteplayback|formnovalidate|hidden|loop|nomodule|novalidate|open|playsinline|readonly|required|reversed|scoped|seamless|selected|itemscope)$/i;
 const AMPERSAND_REGEX = /&/g;
 const DOUBLE_QUOTE_REGEX = /"/g;
 const STATIC_DIRECTIVES = /* @__PURE__ */ new Set(["set:html", "set:text"]);
@@ -1729,7 +1716,7 @@ function renderServerIsland(result, _displayName, props, slots) {
         }
       }
       const key = await result.key;
-      const propsEncrypted = Object.keys(props).length === 0 ? "" : await encryptString(key, JSON.stringify(props));
+      const propsEncrypted = await encryptString(key, JSON.stringify(props));
       const hostId = crypto.randomUUID();
       const slash = result.base.endsWith("/") ? "" : "/";
       let serverIslandUrl = `${result.base}${slash}_server-islands/${componentId}${result.trailingSlash === "always" ? "/" : ""}`;
@@ -1767,10 +1754,7 @@ let response = await fetch('${serverIslandUrl}', {
 `
       )}
 if (script) {
-	if(
-		response.status === 200 
-		&& response.headers.has('content-type') 
-		&& response.headers.get('content-type').split(";")[0].trim() === 'text/html') {
+	if(response.status === 200 && response.headers.get('content-type') === 'text/html') {
 		let html = await response.text();
 	
 		// Swap!
@@ -1981,6 +1965,12 @@ If you're still stuck, please open an issue on GitHub or join us at https://astr
     }
   } else {
     if (metadata.hydrate === "only") {
+      const rendererName = rendererAliases.has(metadata.hydrateArgs) ? rendererAliases.get(metadata.hydrateArgs) : metadata.hydrateArgs;
+      if (!clientOnlyValues.has(rendererName)) {
+        console.warn(
+          `The client:only directive for ${metadata.displayName} is not recognized. The renderer ${renderer.name} will be used. If you intended to use a different renderer, please provide a valid client:only directive.`
+        );
+      }
       html = await renderSlotToString(result, slots?.fallback);
     } else {
       const componentRenderStartTime = performance.now();
@@ -2682,4 +2672,4 @@ function spreadAttributes(values = {}, _name, { class: scopedClassName } = {}) {
   return markHTMLString(output);
 }
 
-export { PrerenderDynamicEndpointPathCollide as $, AstroError as A, REROUTE_DIRECTIVE_HEADER as B, i18nNoLocaleFoundInPath as C, DEFAULT_404_COMPONENT as D, ExpectedImage as E, FailedToFetchRemoteImageDimensions as F, ResponseSentError as G, MiddlewareNoDataOrNextCalled as H, IncompatibleDescriptorOptions as I, MiddlewareNotAResponse as J, originPathnameSymbol as K, LocalImageUsedWrongly as L, MissingSharp as M, NOOP_MIDDLEWARE_HEADER as N, RewriteWithBodyUsed as O, GetStaticPathsRequired as P, InvalidGetStaticPathsReturn as Q, RenderUndefinedEntryError as R, InvalidGetStaticPathsEntry as S, GetStaticPathsExpectedParams as T, UnknownContentCollectionError as U, GetStaticPathsInvalidRouteParam as V, PageNumberParamNotFound as W, decryptString as X, createSlotValueFromString as Y, isAstroComponentFactory as Z, NoMatchingStaticPathFound as _, createAstro as a, ReservedSlotName as a0, renderSlotToString as a1, renderJSX as a2, chunkToString as a3, isRenderInstruction as a4, ForbiddenRewrite as a5, SessionStorageSaveError as a6, SessionStorageInitError as a7, ASTRO_VERSION as a8, LocalsReassigned as a9, PrerenderClientAddressNotAvailable as aa, clientAddressSymbol as ab, ClientAddressNotAvailable as ac, StaticClientAddressNotAvailable as ad, AstroResponseHeadersReassigned as ae, responseSentSymbol as af, renderPage as ag, REWRITE_DIRECTIVE_HEADER_KEY as ah, REWRITE_DIRECTIVE_HEADER_VALUE as ai, renderEndpoint as aj, LocalsNotAnObject as ak, REROUTABLE_STATUS_CODES as al, renderTemplate as b, createComponent as c, addAttribute as d, renderTransition as e, decodeKey as f, renderUniqueStylesheet as g, renderScriptElement as h, createHeadAndContent as i, renderScript as j, renderHead as k, renderSlot as l, maybeRenderHead as m, MissingImageDimension as n, UnsupportedImageFormat as o, UnsupportedImageConversion as p, NoImageMetadata as q, renderComponent as r, ExpectedImageOptions as s, ExpectedNotESMImage as t, unescapeHTML as u, InvalidImageService as v, toStyleString as w, ImageMissingAlt as x, spreadAttributes as y, ROUTE_TYPE_HEADER as z };
+export { PrerenderDynamicEndpointPathCollide as $, AstroError as A, REROUTE_DIRECTIVE_HEADER as B, i18nNoLocaleFoundInPath as C, DEFAULT_404_COMPONENT as D, ExpectedImage as E, FailedToFetchRemoteImageDimensions as F, ResponseSentError as G, MiddlewareNoDataOrNextCalled as H, IncompatibleDescriptorOptions as I, MiddlewareNotAResponse as J, originPathnameSymbol as K, LocalImageUsedWrongly as L, MissingSharp as M, NOOP_MIDDLEWARE_HEADER as N, RewriteWithBodyUsed as O, GetStaticPathsRequired as P, InvalidGetStaticPathsReturn as Q, RenderUndefinedEntryError as R, InvalidGetStaticPathsEntry as S, GetStaticPathsExpectedParams as T, UnknownContentCollectionError as U, GetStaticPathsInvalidRouteParam as V, PageNumberParamNotFound as W, decryptString as X, createSlotValueFromString as Y, isAstroComponentFactory as Z, NoMatchingStaticPathFound as _, createAstro as a, ReservedSlotName as a0, renderSlotToString as a1, renderJSX as a2, chunkToString as a3, isRenderInstruction as a4, ForbiddenRewrite as a5, ASTRO_VERSION as a6, LocalsReassigned as a7, clientAddressSymbol as a8, PrerenderClientAddressNotAvailable as a9, ClientAddressNotAvailable as aa, StaticClientAddressNotAvailable as ab, AstroResponseHeadersReassigned as ac, responseSentSymbol as ad, renderPage as ae, REWRITE_DIRECTIVE_HEADER_KEY as af, REWRITE_DIRECTIVE_HEADER_VALUE as ag, renderEndpoint as ah, LocalsNotAnObject as ai, clientLocalsSymbol as aj, REROUTABLE_STATUS_CODES as ak, renderTemplate as b, createComponent as c, addAttribute as d, renderTransition as e, decodeKey as f, renderUniqueStylesheet as g, renderScriptElement as h, createHeadAndContent as i, renderScript as j, renderHead as k, renderSlot as l, maybeRenderHead as m, MissingImageDimension as n, UnsupportedImageFormat as o, UnsupportedImageConversion as p, NoImageMetadata as q, renderComponent as r, ExpectedImageOptions as s, ExpectedNotESMImage as t, unescapeHTML as u, InvalidImageService as v, toStyleString as w, ImageMissingAlt as x, spreadAttributes as y, ROUTE_TYPE_HEADER as z };

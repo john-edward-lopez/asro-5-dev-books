@@ -1,11 +1,14 @@
-import { c as createComponent, m as maybeRenderHead, b as renderTemplate } from './astro/server_Z9lDC5E0.mjs';
+import { c as createComponent, m as maybeRenderHead, b as renderTemplate } from './astro/server_CWMWUkvN.mjs';
 import 'kleur/colors';
 import 'clsx';
-import { s as setOnSetGetEnv } from './runtime_BaX0UJyD.mjs';
+import { s as setOnSetGetEnv } from './runtime_D4VX3l65.mjs';
 
 // @ts-check
 
-setOnSetGetEnv(() => {
+// used while generating the virtual module
+// biome-ignore lint/correctness/noUnusedFunctionParameters: `reset` is used by the generated code
+// biome-ignore lint/correctness/noUnusedVariables: `reset` is used by the generated code
+setOnSetGetEnv((reset) => {
 	
 });
 const SCORE_API_ENDPOINT = "https://www.random.org/integers/?num=1&min=1&max=5&col=1&base=10&format=plain&rnd=new";

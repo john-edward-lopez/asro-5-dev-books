@@ -1,7 +1,8 @@
 import { i as isRemotePath, j as joinPaths } from './path_I7weJv-K.mjs';
-import { A as AstroError, E as ExpectedImage, L as LocalImageUsedWrongly, n as MissingImageDimension, o as UnsupportedImageFormat, I as IncompatibleDescriptorOptions, p as UnsupportedImageConversion, q as NoImageMetadata, F as FailedToFetchRemoteImageDimensions, s as ExpectedImageOptions, t as ExpectedNotESMImage, v as InvalidImageService, w as toStyleString, c as createComponent, a as createAstro, x as ImageMissingAlt, m as maybeRenderHead, d as addAttribute, y as spreadAttributes, b as renderTemplate } from './astro/server_Z9lDC5E0.mjs';
+import { A as AstroError, E as ExpectedImage, L as LocalImageUsedWrongly, n as MissingImageDimension, o as UnsupportedImageFormat, I as IncompatibleDescriptorOptions, p as UnsupportedImageConversion, q as NoImageMetadata, F as FailedToFetchRemoteImageDimensions, s as ExpectedImageOptions, t as ExpectedNotESMImage, v as InvalidImageService, w as toStyleString, c as createComponent, a as createAstro, x as ImageMissingAlt, m as maybeRenderHead, d as addAttribute, y as spreadAttributes, b as renderTemplate } from './astro/server_CWMWUkvN.mjs';
 import { D as DEFAULT_OUTPUT_FORMAT, a as VALID_SUPPORTED_FORMATS, b as DEFAULT_HASH_PROPS } from './consts_BmVDRGlB.mjs';
 import * as mime from 'mrmime';
+/* empty css                           */
 import 'clsx';
 
 const DEFAULT_RESOLUTIONS = [
@@ -90,14 +91,10 @@ const getSizesAttribute = ({
     return void 0;
   }
   switch (layout) {
-    // If screen is wider than the max size then image width is the max size,
-    // otherwise it's the width of the screen
     case `responsive`:
       return `(min-width: ${width}px) ${width}px, 100vw`;
-    // Image is always the same width, whatever the size of the screen
     case `fixed`:
       return `${width}px`;
-    // Image is always the width of the screen
     case `full-width`:
       return `100vw`;
     case "none":
@@ -1223,7 +1220,7 @@ async function getConfiguredImageService() {
   if (!globalThis?.astroAsset?.imageService) {
     const { default: service } = await import(
       // @ts-expect-error
-      './sharp_DAZly70I.mjs'
+      './sharp_xJANqJBw.mjs'
     ).catch((e) => {
       const error = new AstroError(InvalidImageService);
       error.cause = e;
@@ -1412,13 +1409,13 @@ const $$Image = createComponent(async ($$result, $$props, $$slots) => {
   if (image.srcSet.values.length > 0) {
     additionalAttributes.srcset = image.srcSet.attribute;
   }
-  const { class: className, ...attributes } = useResponsive ? applyResponsiveAttributes({
+  const attributes = useResponsive ? applyResponsiveAttributes({
     layout,
     image,
     props,
     additionalAttributes
   }) : { ...additionalAttributes, ...image.attributes };
-  return renderTemplate`${maybeRenderHead()}<img${addAttribute(image.src, "src")}${spreadAttributes(attributes)}${addAttribute(className, "class")}>`;
+  return renderTemplate`${maybeRenderHead()}<img${addAttribute(image.src, "src")}${spreadAttributes(attributes)}${addAttribute(attributes.class, "class")}>`;
 }, "C:/Users/john lopez/Desktop/aprendiendo-astro/node_modules/astro/components/Image.astro", void 0);
 
 const $$Astro = createAstro();
@@ -1482,7 +1479,7 @@ const $$Picture = createComponent(async ($$result, $$props, $$slots) => {
   if (fallbackImage.srcSet.values.length > 0) {
     imgAdditionalAttributes.srcset = fallbackImage.srcSet.attribute;
   }
-  const { class: className, ...attributes } = useResponsive ? applyResponsiveAttributes({
+  const attributes = useResponsive ? applyResponsiveAttributes({
     layout,
     image: fallbackImage,
     props,
@@ -1491,7 +1488,7 @@ const $$Picture = createComponent(async ($$result, $$props, $$slots) => {
   return renderTemplate`${maybeRenderHead()}<picture${spreadAttributes(pictureAttributes)}> ${Object.entries(optimizedImages).map(([_, image]) => {
     const srcsetAttribute = props.densities || !props.densities && !props.widths && !useResponsive ? `${image.src}${image.srcSet.values.length > 0 ? ", " + image.srcSet.attribute : ""}` : image.srcSet.attribute;
     return renderTemplate`<source${addAttribute(srcsetAttribute, "srcset")}${addAttribute(mime.lookup(image.options.format ?? image.src) ?? `image/${image.options.format}`, "type")}${spreadAttributes(sourceAdditionalAttributes)}>`;
-  })}  <img${addAttribute(fallbackImage.src, "src")}${spreadAttributes(attributes)}${addAttribute(className, "class")}> </picture>`;
+  })}  <img${addAttribute(fallbackImage.src, "src")}${spreadAttributes(attributes)}${addAttribute(attributes.class, "class")}> </picture>`;
 }, "C:/Users/john lopez/Desktop/aprendiendo-astro/node_modules/astro/components/Picture.astro", void 0);
 
 const imageConfig = {"endpoint":{"route":"/_image"},"service":{"entrypoint":"astro/assets/services/sharp","config":{}},"domains":[],"remotePatterns":[],"experimentalResponsiveImages":false};
