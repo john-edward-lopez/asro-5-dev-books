@@ -1,6 +1,6 @@
 // @ts-check
 import { defineConfig, envField } from "astro/config";
-import vercel from "@astrojs/vercel/serverless";
+import netlify from "@astrojs/netlify";
 import tailwindcss from "@tailwindcss/vite";
 
 // https://astro.build/config
@@ -23,5 +23,5 @@ export default defineConfig({
       }),
     },
   },
-  adapter: vercel({ isr: false }),
+  adapter: netlify(),
 });
