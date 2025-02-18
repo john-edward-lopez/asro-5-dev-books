@@ -4,7 +4,7 @@ import { escape } from 'html-escaper';
 import { decodeBase64, encodeHexUpperCase, encodeBase64, decodeHex } from '@oslojs/encoding';
 import cssesc from 'cssesc';
 
-const ASTRO_VERSION = "5.3.0";
+const ASTRO_VERSION = "5.0.5";
 const REROUTE_DIRECTIVE_HEADER = "X-Astro-Reroute";
 const REWRITE_DIRECTIVE_HEADER_KEY = "X-Astro-Rewrite";
 const REWRITE_DIRECTIVE_HEADER_VALUE = "yes";
@@ -285,18 +285,6 @@ const RenderUndefinedEntryError = {
   title: "Attempted to render an undefined content collection entry.",
   hint: "Check if the entry is undefined before passing it to `render()`"
 };
-const SessionStorageInitError = {
-  name: "SessionStorageInitError",
-  title: "Session storage could not be initialized.",
-  message: (error, driver) => `Error when initializing session storage${driver ? ` with driver \`${driver}\`` : ""}. \`${error ?? ""}\``,
-  hint: "For more information, see https://docs.astro.build/en/reference/experimental-flags/sessions/"
-};
-const SessionStorageSaveError = {
-  name: "SessionStorageSaveError",
-  title: "Session data could not be saved.",
-  message: (error, driver) => `Error when saving session data${driver ? ` with driver \`${driver}\`` : ""}. \`${error ?? ""}\``,
-  hint: "For more information, see https://docs.astro.build/en/reference/experimental-flags/sessions/"
-};
 
 function normalizeLF(code) {
   return code.replace(/\r\n|\r(?!\n)|\n/g, "\n");
@@ -368,6 +356,54 @@ class AstroError extends Error {
   }
 }
 
+async function renderEndpoint(mod, context, isPrerendered, logger) {
+  const { request, url } = context;
+  const method = request.method.toUpperCase();
+  const handler = mod[method] ?? mod["ALL"];
+  if (isPrerendered && method !== "GET") {
+    logger.warn(
+      "router",
+      `${url.pathname} ${bold(
+        method
+      )} requests are not available in static endpoints. Mark this page as server-rendered (\`export const prerender = false;\`) or update your config to \`output: 'server'\` to make all your pages server-rendered by default.`
+    );
+  }
+  if (handler === void 0) {
+    logger.warn(
+      "router",
+      `No API Route handler exists for the method "${method}" for the route "${url.pathname}".
+Found handlers: ${Object.keys(mod).map((exp) => JSON.stringify(exp)).join(", ")}
+` + ("all" in mod ? `One of the exported handlers is "all" (lowercase), did you mean to export 'ALL'?
+` : "")
+    );
+    return new Response(null, { status: 404 });
+  }
+  if (typeof handler !== "function") {
+    logger.error(
+      "router",
+      `The route "${url.pathname}" exports a value for the method "${method}", but it is of the type ${typeof handler} instead of a function.`
+    );
+    return new Response(null, { status: 500 });
+  }
+  let response = await handler.call(mod, context);
+  if (!response || response instanceof Response === false) {
+    throw new AstroError(EndpointDidNotReturnAResponse);
+  }
+  if (REROUTABLE_STATUS_CODES.includes(response.status)) {
+    try {
+      response.headers.set(REROUTE_DIRECTIVE_HEADER, "no");
+    } catch (err) {
+      if (err.message?.includes("immutable")) {
+        response = new Response(response.body, response);
+        response.headers.set(REROUTE_DIRECTIVE_HEADER, "no");
+      } else {
+        throw err;
+      }
+    }
+  }
+  return response;
+}
+
 function validateArgs(args) {
   if (args.length !== 3) return false;
   if (!args[0] || typeof args[0] !== "object") return false;
@@ -431,60 +467,6 @@ function createAstro(site) {
     generator: `Astro v${ASTRO_VERSION}`,
     glob: createAstroGlobFn()
   };
-}
-
-async function renderEndpoint(mod, context, isPrerendered, logger) {
-  const { request, url } = context;
-  const method = request.method.toUpperCase();
-  let handler = mod[method] ?? mod["ALL"];
-  if (!handler && method === "HEAD" && mod["GET"]) {
-    handler = mod["GET"];
-  }
-  if (isPrerendered && !["GET", "HEAD"].includes(method)) {
-    logger.warn(
-      "router",
-      `${url.pathname} ${bold(
-        method
-      )} requests are not available in static endpoints. Mark this page as server-rendered (\`export const prerender = false;\`) or update your config to \`output: 'server'\` to make all your pages server-rendered by default.`
-    );
-  }
-  if (handler === void 0) {
-    logger.warn(
-      "router",
-      `No API Route handler exists for the method "${method}" for the route "${url.pathname}".
-Found handlers: ${Object.keys(mod).map((exp) => JSON.stringify(exp)).join(", ")}
-` + ("all" in mod ? `One of the exported handlers is "all" (lowercase), did you mean to export 'ALL'?
-` : "")
-    );
-    return new Response(null, { status: 404 });
-  }
-  if (typeof handler !== "function") {
-    logger.error(
-      "router",
-      `The route "${url.pathname}" exports a value for the method "${method}", but it is of the type ${typeof handler} instead of a function.`
-    );
-    return new Response(null, { status: 500 });
-  }
-  let response = await handler.call(mod, context);
-  if (!response || response instanceof Response === false) {
-    throw new AstroError(EndpointDidNotReturnAResponse);
-  }
-  if (REROUTABLE_STATUS_CODES.includes(response.status)) {
-    try {
-      response.headers.set(REROUTE_DIRECTIVE_HEADER, "no");
-    } catch (err) {
-      if (err.message?.includes("immutable")) {
-        response = new Response(response.body, response);
-        response.headers.set(REROUTE_DIRECTIVE_HEADER, "no");
-      } else {
-        throw err;
-      }
-    }
-  }
-  if (method === "HEAD") {
-    return new Response(null, response);
-  }
-  return response;
 }
 
 function isPromise(value) {
@@ -721,8 +703,6 @@ function extractDirectives(inputProps, clientDirectives) {
           extracted.hydration.componentExport.value = value;
           break;
         }
-        // This is a special prop added to prove that the client hydration method
-        // was added statically.
         case "client:component-hydration": {
           break;
         }
@@ -925,7 +905,7 @@ function getPrescripts(result, type, directive) {
 }
 
 const voidElementNames = /^(area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/i;
-const htmlBooleanAttributes = /^(?:allowfullscreen|async|autofocus|autoplay|checked|controls|default|defer|disabled|disablepictureinpicture|disableremoteplayback|formnovalidate|hidden|inert|loop|nomodule|novalidate|open|playsinline|readonly|required|reversed|scoped|seamless|selected|itemscope)$/i;
+const htmlBooleanAttributes = /^(?:allowfullscreen|async|autofocus|autoplay|checked|controls|default|defer|disabled|disablepictureinpicture|disableremoteplayback|formnovalidate|hidden|loop|nomodule|novalidate|open|playsinline|readonly|required|reversed|scoped|seamless|selected|itemscope)$/i;
 const AMPERSAND_REGEX = /&/g;
 const DOUBLE_QUOTE_REGEX = /"/g;
 const STATIC_DIRECTIVES = /* @__PURE__ */ new Set(["set:html", "set:text"]);
@@ -1027,38 +1007,28 @@ class BufferedRenderer {
   chunks = [];
   renderPromise;
   destination;
-  /**
-   * Determines whether buffer has been flushed
-   * to the final destination.
-   */
-  flushed = false;
-  constructor(destination, renderFunction) {
-    this.destination = destination;
-    this.renderPromise = renderFunction(this);
-    if (isPromise(this.renderPromise)) {
-      Promise.resolve(this.renderPromise).catch(noop);
-    }
+  constructor(bufferRenderFunction) {
+    this.renderPromise = bufferRenderFunction(this);
+    Promise.resolve(this.renderPromise).catch(noop);
   }
   write(chunk) {
-    if (this.flushed) {
+    if (this.destination) {
       this.destination.write(chunk);
     } else {
       this.chunks.push(chunk);
     }
   }
-  flush() {
-    if (this.flushed) {
-      throw new Error("The render buffer has already been flushed.");
-    }
-    this.flushed = true;
+  async renderToFinalDestination(destination) {
     for (const chunk of this.chunks) {
-      this.destination.write(chunk);
+      destination.write(chunk);
     }
-    return this.renderPromise;
+    this.destination = destination;
+    await this.renderPromise;
   }
 }
-function createBufferedRenderer(destination, renderFunction) {
-  return new BufferedRenderer(destination, renderFunction);
+function renderToBufferDestination(bufferRenderFunction) {
+  const renderer = new BufferedRenderer(bufferRenderFunction);
+  return renderer;
 }
 const isNode = typeof process !== "undefined" && Object.prototype.toString.call(process) === "[object process]";
 const isDeno = typeof Deno !== "undefined";
@@ -1135,32 +1105,22 @@ class RenderTemplateResult {
       return expression;
     });
   }
-  render(destination) {
-    const flushers = this.expressions.map((exp) => {
-      return createBufferedRenderer(destination, (bufferDestination) => {
+  async render(destination) {
+    const expRenders = this.expressions.map((exp) => {
+      return renderToBufferDestination((bufferDestination) => {
         if (exp || exp === 0) {
           return renderChild(bufferDestination, exp);
         }
       });
     });
-    let i = 0;
-    const iterate = () => {
-      while (i < this.htmlParts.length) {
-        const html = this.htmlParts[i];
-        const flusher = flushers[i];
-        i++;
-        if (html) {
-          destination.write(markHTMLString(html));
-        }
-        if (flusher) {
-          const result = flusher.flush();
-          if (isPromise(result)) {
-            return result.then(iterate);
-          }
-        }
+    for (let i = 0; i < this.htmlParts.length; i++) {
+      const html = this.htmlParts[i];
+      const expRender = expRenders[i];
+      destination.write(markHTMLString(html));
+      if (expRender) {
+        await expRender.renderToFinalDestination(destination);
       }
-    };
-    return iterate();
+    }
   }
 }
 function isRenderTemplateResult(obj) {
@@ -1324,92 +1284,42 @@ function isRenderInstance(obj) {
   return !!obj && typeof obj === "object" && "render" in obj && typeof obj.render === "function";
 }
 
-function renderChild(destination, child) {
+async function renderChild(destination, child) {
   if (isPromise(child)) {
-    return child.then((x) => renderChild(destination, x));
+    child = await child;
   }
   if (child instanceof SlotString) {
     destination.write(child);
-    return;
-  }
-  if (isHTMLString(child)) {
+  } else if (isHTMLString(child)) {
     destination.write(child);
-    return;
-  }
-  if (Array.isArray(child)) {
-    return renderArray(destination, child);
-  }
-  if (typeof child === "function") {
-    return renderChild(destination, child());
-  }
-  if (!child && child !== 0) {
-    return;
-  }
-  if (typeof child === "string") {
-    destination.write(markHTMLString(escapeHTML(child)));
-    return;
-  }
-  if (isRenderInstance(child)) {
-    return child.render(destination);
-  }
-  if (isRenderTemplateResult(child)) {
-    return child.render(destination);
-  }
-  if (isAstroComponentInstance(child)) {
-    return child.render(destination);
-  }
-  if (ArrayBuffer.isView(child)) {
-    destination.write(child);
-    return;
-  }
-  if (typeof child === "object" && (Symbol.asyncIterator in child || Symbol.iterator in child)) {
-    if (Symbol.asyncIterator in child) {
-      return renderAsyncIterable(destination, child);
-    }
-    return renderIterable(destination, child);
-  }
-  destination.write(child);
-}
-function renderArray(destination, children) {
-  const flushers = children.map((c) => {
-    return createBufferedRenderer(destination, (bufferDestination) => {
-      return renderChild(bufferDestination, c);
+  } else if (Array.isArray(child)) {
+    const childRenders = child.map((c) => {
+      return renderToBufferDestination((bufferDestination) => {
+        return renderChild(bufferDestination, c);
+      });
     });
-  });
-  const iterator = flushers[Symbol.iterator]();
-  const iterate = () => {
-    for (; ; ) {
-      const { value: flusher, done } = iterator.next();
-      if (done) {
-        break;
-      }
-      const result = flusher.flush();
-      if (isPromise(result)) {
-        return result.then(iterate);
-      }
+    for (const childRender of childRenders) {
+      if (!childRender) continue;
+      await childRender.renderToFinalDestination(destination);
     }
-  };
-  return iterate();
-}
-function renderIterable(destination, children) {
-  const iterator = children[Symbol.iterator]();
-  const iterate = () => {
-    for (; ; ) {
-      const { value, done } = iterator.next();
-      if (done) {
-        break;
-      }
-      const result = renderChild(destination, value);
-      if (isPromise(result)) {
-        return result.then(iterate);
-      }
+  } else if (typeof child === "function") {
+    await renderChild(destination, child());
+  } else if (typeof child === "string") {
+    destination.write(markHTMLString(escapeHTML(child)));
+  } else if (!child && child !== 0) ; else if (isRenderInstance(child)) {
+    await child.render(destination);
+  } else if (isRenderTemplateResult(child)) {
+    await child.render(destination);
+  } else if (isAstroComponentInstance(child)) {
+    await child.render(destination);
+  } else if (ArrayBuffer.isView(child)) {
+    destination.write(child);
+  } else if (typeof child === "object" && (Symbol.asyncIterator in child || Symbol.iterator in child)) {
+    for await (const value of child) {
+      await renderChild(destination, value);
     }
-  };
-  return iterate();
-}
-async function renderAsyncIterable(destination, children) {
-  for await (const value of children) {
-    await renderChild(destination, value);
+  } else {
+    destination.write(child);
   }
 }
 
@@ -1438,10 +1348,8 @@ class AstroComponentInstance {
       };
     }
   }
-  init(result) {
-    if (this.returnValue !== void 0) {
-      return this.returnValue;
-    }
+  async init(result) {
+    if (this.returnValue !== void 0) return this.returnValue;
     this.returnValue = this.factory(result, this.props, this.slotValues);
     if (isPromise(this.returnValue)) {
       this.returnValue.then((resolved) => {
@@ -1451,18 +1359,12 @@ class AstroComponentInstance {
     }
     return this.returnValue;
   }
-  render(destination) {
-    const returnValue = this.init(this.result);
-    if (isPromise(returnValue)) {
-      return returnValue.then((x) => this.renderImpl(destination, x));
-    }
-    return this.renderImpl(destination, returnValue);
-  }
-  renderImpl(destination, returnValue) {
+  async render(destination) {
+    const returnValue = await this.init(this.result);
     if (isHeadAndContent(returnValue)) {
-      return returnValue.content.render(destination);
+      await returnValue.content.render(destination);
     } else {
-      return renderChild(destination, returnValue);
+      await renderChild(destination, returnValue);
     }
   }
 }
@@ -1692,10 +1594,12 @@ async function renderToAsyncIterable(result, componentFactory, props, children, 
       }
     }
   };
-  const renderResult = toPromise(() => templateResult.render(destination));
-  renderResult.catch((err) => {
+  const renderPromise = templateResult.render(destination);
+  renderPromise.then(() => {
+    renderingComplete = true;
+    next?.resolve();
+  }).catch((err) => {
     error = err;
-  }).finally(() => {
     renderingComplete = true;
     next?.resolve();
   });
@@ -1704,14 +1608,6 @@ async function renderToAsyncIterable(result, componentFactory, props, children, 
       return iterator;
     }
   };
-}
-function toPromise(fn) {
-  try {
-    const result = fn();
-    return isPromise(result) ? result : Promise.resolve(result);
-  } catch (err) {
-    return Promise.reject(err);
-  }
 }
 
 function componentIsHTMLElement(Component) {
@@ -1779,12 +1675,8 @@ const internalProps = /* @__PURE__ */ new Set([
 function containsServerDirective(props) {
   return "server:component-directive" in props;
 }
-const SCRIPT_RE = /<\/script/giu;
-const COMMENT_RE = /<!--/gu;
-const SCRIPT_REPLACER = "<\\/script";
-const COMMENT_REPLACER = "\\u003C!--";
 function safeJsonStringify(obj) {
-  return JSON.stringify(obj).replace(SCRIPT_RE, SCRIPT_REPLACER).replace(COMMENT_RE, COMMENT_REPLACER);
+  return JSON.stringify(obj).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029").replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/\//g, "\\u002f");
 }
 function createSearchParams(componentExport, encryptedProps, slots) {
   const params = new URLSearchParams();
@@ -1823,7 +1715,7 @@ function renderServerIsland(result, _displayName, props, slots) {
         }
       }
       const key = await result.key;
-      const propsEncrypted = Object.keys(props).length === 0 ? "" : await encryptString(key, JSON.stringify(props));
+      const propsEncrypted = await encryptString(key, JSON.stringify(props));
       const hostId = crypto.randomUUID();
       const slash = result.base.endsWith("/") ? "" : "/";
       let serverIslandUrl = `${result.base}${slash}_server-islands/${componentId}${result.trailingSlash === "always" ? "/" : ""}`;
@@ -1861,10 +1753,7 @@ let response = await fetch('${serverIslandUrl}', {
 `
       )}
 if (script) {
-	if(
-		response.status === 200 
-		&& response.headers.has('content-type') 
-		&& response.headers.get('content-type').split(";")[0].trim() === 'text/html') {
+	if(response.status === 200 && response.headers.get('content-type') === 'text/html') {
 		let html = await response.text();
 	
 		// Swap!
@@ -2212,28 +2101,26 @@ function renderAstroComponent(result, displayName, Component, props, slots = {})
   }
   const instance = createAstroComponentInstance(result, displayName, Component, props, slots);
   return {
-    render(destination) {
-      return instance.render(destination);
+    async render(destination) {
+      await instance.render(destination);
     }
   };
 }
-function renderComponent(result, displayName, Component, props, slots = {}) {
+async function renderComponent(result, displayName, Component, props, slots = {}) {
   if (isPromise(Component)) {
-    return Component.catch(handleCancellation).then((x) => {
-      return renderComponent(result, displayName, x, props, slots);
-    });
+    Component = await Component.catch(handleCancellation);
   }
   if (isFragmentComponent(Component)) {
-    return renderFragmentComponent(result, slots).catch(handleCancellation);
+    return await renderFragmentComponent(result, slots).catch(handleCancellation);
   }
   props = normalizeProps(props);
   if (isHTMLComponent(Component)) {
-    return renderHTMLComponent(result, Component, props, slots).catch(handleCancellation);
+    return await renderHTMLComponent(result, Component, props, slots).catch(handleCancellation);
   }
   if (isAstroComponentFactory(Component)) {
     return renderAstroComponent(result, displayName, Component, props, slots);
   }
-  return renderFrameworkComponent(result, displayName, Component, props, slots).catch(
+  return await renderFrameworkComponent(result, displayName, Component, props, slots).catch(
     handleCancellation
   );
   function handleCancellation(e) {
@@ -2778,4 +2665,4 @@ function spreadAttributes(values = {}, _name, { class: scopedClassName } = {}) {
   return markHTMLString(output);
 }
 
-export { PrerenderDynamicEndpointPathCollide as $, AstroError as A, createSlotValueFromString as B, isAstroComponentFactory as C, DEFAULT_404_COMPONENT as D, ExpectedImage as E, FailedToFetchRemoteImageDimensions as F, ROUTE_TYPE_HEADER as G, REROUTE_DIRECTIVE_HEADER as H, IncompatibleDescriptorOptions as I, i18nNoLocaleFoundInPath as J, ResponseSentError as K, LocalImageUsedWrongly as L, MissingSharp as M, NOOP_MIDDLEWARE_HEADER as N, MiddlewareNoDataOrNextCalled as O, MiddlewareNotAResponse as P, originPathnameSymbol as Q, RenderUndefinedEntryError as R, RewriteWithBodyUsed as S, GetStaticPathsRequired as T, UnknownContentCollectionError as U, InvalidGetStaticPathsReturn as V, InvalidGetStaticPathsEntry as W, GetStaticPathsExpectedParams as X, GetStaticPathsInvalidRouteParam as Y, PageNumberParamNotFound as Z, NoMatchingStaticPathFound as _, createAstro as a, ReservedSlotName as a0, renderSlotToString as a1, renderJSX as a2, chunkToString as a3, isRenderInstruction as a4, ForbiddenRewrite as a5, SessionStorageSaveError as a6, SessionStorageInitError as a7, ASTRO_VERSION as a8, LocalsReassigned as a9, PrerenderClientAddressNotAvailable as aa, clientAddressSymbol as ab, ClientAddressNotAvailable as ac, StaticClientAddressNotAvailable as ad, AstroResponseHeadersReassigned as ae, responseSentSymbol as af, renderPage as ag, REWRITE_DIRECTIVE_HEADER_KEY as ah, REWRITE_DIRECTIVE_HEADER_VALUE as ai, renderEndpoint as aj, LocalsNotAnObject as ak, REROUTABLE_STATUS_CODES as al, renderTemplate as b, createComponent as c, addAttribute as d, renderTransition as e, decodeKey as f, renderUniqueStylesheet as g, renderScriptElement as h, createHeadAndContent as i, renderScript as j, renderHead as k, renderSlot as l, maybeRenderHead as m, MissingImageDimension as n, UnsupportedImageFormat as o, UnsupportedImageConversion as p, NoImageMetadata as q, renderComponent as r, ExpectedImageOptions as s, ExpectedNotESMImage as t, unescapeHTML as u, InvalidImageService as v, toStyleString as w, ImageMissingAlt as x, spreadAttributes as y, decryptString as z };
+export { PrerenderDynamicEndpointPathCollide as $, AstroError as A, REROUTE_DIRECTIVE_HEADER as B, i18nNoLocaleFoundInPath as C, DEFAULT_404_COMPONENT as D, ExpectedImage as E, FailedToFetchRemoteImageDimensions as F, ResponseSentError as G, MiddlewareNoDataOrNextCalled as H, IncompatibleDescriptorOptions as I, MiddlewareNotAResponse as J, originPathnameSymbol as K, LocalImageUsedWrongly as L, MissingSharp as M, NOOP_MIDDLEWARE_HEADER as N, RewriteWithBodyUsed as O, GetStaticPathsRequired as P, InvalidGetStaticPathsReturn as Q, RenderUndefinedEntryError as R, InvalidGetStaticPathsEntry as S, GetStaticPathsExpectedParams as T, UnknownContentCollectionError as U, GetStaticPathsInvalidRouteParam as V, PageNumberParamNotFound as W, decryptString as X, createSlotValueFromString as Y, isAstroComponentFactory as Z, NoMatchingStaticPathFound as _, createAstro as a, ReservedSlotName as a0, renderSlotToString as a1, renderJSX as a2, chunkToString as a3, isRenderInstruction as a4, ForbiddenRewrite as a5, ASTRO_VERSION as a6, LocalsReassigned as a7, PrerenderClientAddressNotAvailable as a8, clientAddressSymbol as a9, ClientAddressNotAvailable as aa, StaticClientAddressNotAvailable as ab, AstroResponseHeadersReassigned as ac, responseSentSymbol as ad, renderPage as ae, REWRITE_DIRECTIVE_HEADER_KEY as af, REWRITE_DIRECTIVE_HEADER_VALUE as ag, renderEndpoint as ah, LocalsNotAnObject as ai, REROUTABLE_STATUS_CODES as aj, renderTemplate as b, createComponent as c, addAttribute as d, renderTransition as e, decodeKey as f, renderUniqueStylesheet as g, renderScriptElement as h, createHeadAndContent as i, renderScript as j, renderHead as k, renderSlot as l, maybeRenderHead as m, MissingImageDimension as n, UnsupportedImageFormat as o, UnsupportedImageConversion as p, NoImageMetadata as q, renderComponent as r, ExpectedImageOptions as s, ExpectedNotESMImage as t, unescapeHTML as u, InvalidImageService as v, toStyleString as w, ImageMissingAlt as x, spreadAttributes as y, ROUTE_TYPE_HEADER as z };
