@@ -23,7 +23,7 @@ const { title, author, img, readtime, description, buy } = data;
 
 const { Content } = await render(book);
 
-export const prerender = false;
+export const prerender = true;
 ---
 
 <Layout title={`${title} - Dev Books`}>
